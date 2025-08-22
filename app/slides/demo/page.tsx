@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { Container, Title, Text, Paper, Button, Group, Stack } from '@mantine/core';
-import { IconArrowLeft, IconPresentation } from '@tabler/icons-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Demo slide data
 const demoDeckData = {
@@ -173,67 +171,37 @@ const demoDeckData = {
 };
 
 export default function DemoSlidesPage() {
-  const slideshowRef = useRef<HTMLDivElement>(null);
-  const remarkRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    // Dynamically load remarkjs
-    const loadRemark = async () => {
-      try {
-        // Check if remark is already loaded
-        if (window.remark) {
-          initializeSlideshow();
-          return;
-        }
-
-        // Load remarkjs script
-        const script = document.createElement('script');
-        script.src = 'https://remarkjs.com/downloads/remark-latest.min.js';
-        script.onload = () => {
-          if (window.remark) {
-            initializeSlideshow();
-          }
-        };
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error('Failed to load remarkjs:', error);
-      }
-    };
-
-    const initializeSlideshow = () => {
-      if (!window.remark || !slideshowRef.current) return;
-
-      // Create the markdown content
+    if (textareaRef.current) {
+      // Create markdown content from the demo deck
       const markdownContent = createMarkdownContent(demoDeckData);
+      textareaRef.current.value = markdownContent;
       
-      // Set the content
-      if (slideshowRef.current) {
-        slideshowRef.current.innerHTML = `<textarea id="source">${markdownContent}</textarea>`;
-      }
-
-      // Initialize remark
-      try {
-        remarkRef.current = window.remark.create({
-          sourceUrl: '#source',
-          highlightStyle: 'github',
-          highlightLines: true,
-          highlightSpans: true,
-          countIncrementalSlides: false,
-        });
-      } catch (error) {
-        console.error('Failed to initialize remark:', error);
-      }
-    };
-
-    loadRemark();
-
-    return () => {
-      // Cleanup
-      if (remarkRef.current) {
-        remarkRef.current = null;
-      }
-    };
+      // Initialize remark.js
+      initializeRemark();
+    }
   }, []);
+
+  useEffect(() => {
+    // Add keyboard event listener for navigation back to home
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Check if 'H' key is pressed (case insensitive)
+      if (event.key.toLowerCase() === 'h') {
+        router.push('/');
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [router]);
 
   const createMarkdownContent = (deck: any): string => {
     let markdown = '';
@@ -267,14 +235,18 @@ export default function DemoSlidesPage() {
       }
       
       // Add slide content
-      markdown += `\n${slide.content}\n`;
+      let cleanContent = slide.content;
+      cleanContent = cleanContent.replace(/^class:\s*[^\n]+\n?/gm, '');
+      cleanContent = cleanContent.replace(/^\n+/, '');
+      
+      markdown += `\n${cleanContent}\n`;
       
       // Add slide notes if they exist
       if (slide.notes) {
         markdown += `\n???\n${slide.notes}\n`;
       }
       
-      // Add slide separator (unless it's the last slide)
+      // Add slide separator
       if (index < deck.slides.length - 1) {
         const nextSlide = deck.slides[index + 1];
         if (nextSlide.incrementalFromPrevious) {
@@ -288,54 +260,28 @@ export default function DemoSlidesPage() {
     return markdown;
   };
 
+  const initializeRemark = () => {
+    // Load remark.js script
+    const script = document.createElement('script');
+    script.src = 'https://remarkjs.com/downloads/remark-latest.min.js';
+    script.onload = () => {
+      if (window.remark) {
+        window.remark.create();
+      }
+    };
+    document.head.appendChild(script);
+  };
+
   return (
-    <Container size="xl" py="xl">
-      <Stack gap="lg">
-        {/* Header */}
-        <Group justify="space-between" align="center">
-          <Group>
-            <Link href="/slides" passHref>
-              <Button variant="subtle" leftSection={<IconArrowLeft size={16} />}>
-                Back to Slides
-              </Button>
-            </Link>
-          </Group>
-          <Group>
-            <IconPresentation size={24} />
-            <Title order={1} size="h2">Demo Slides - Spoodle Presentation</Title>
-          </Group>
-        </Group>
-
-        {/* Instructions */}
-        <Paper p="md" withBorder>
-          <Text size="sm" c="dimmed">
-            This is a demo presentation showcasing the remarkjs functionality. Use the arrow keys or click the navigation buttons to navigate through the slides.
-            Press 'F' for fullscreen, 'P' for presenter mode, and 'C' to open presenter console.
-          </Text>
-        </Paper>
-
-        {/* Slideshow Container */}
-        <Paper withBorder>
-          <div 
-            ref={slideshowRef}
-            style={{ 
-              minHeight: '600px',
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              overflow: 'hidden'
-            }}
-          >
-            {/* Remark will render the slides here */}
-            <div style={{ padding: '20px', textAlign: 'center' }}>
-              <Text size="lg" c="dimmed">Loading demo slides...</Text>
-            </div>
-          </div>
-        </Paper>
-
-        {/* Custom CSS Injection */}
-        <style dangerouslySetInnerHTML={{ __html: demoDeckData.css }} />
-      </Stack>
-    </Container>
+    <>
+      {/* Custom CSS Injection */}
+      <style dangerouslySetInnerHTML={{ __html: demoDeckData.css }} />
+      
+      {/* Simple textarea for remark.js */}
+      <textarea id="source" ref={textareaRef} style={{ display: 'none' }}>
+        {createMarkdownContent(demoDeckData)}
+      </textarea>
+    </>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button, Text, TextInput, Title, Paper, Group, Stack, Badge, Code, Alert, Select, ActionIcon, Tooltip } from '@mantine/core';
-import { IconPresentation, IconExternalLink, IconCopy, IconCheck, IconHistory, IconTrash } from '@tabler/icons-react';
+import { IconPresentation, IconExternalLink, IconCopy, IconCheck, IconHistory, IconTrash, IconInfoCircle } from '@tabler/icons-react';
 import { ClientRateLimiter } from '@/app/lib/utils/api-helpers';
 import Link from 'next/link';
 
@@ -39,11 +39,9 @@ interface CachedSlide {
 
 export function SlideInput() {
   const [input, setInput] = useState('');
-  const [response, setResponse] = useState<RemarkDeck | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [remainingRequests, setRemainingRequests] = useState(0);
-  const [copied, setCopied] = useState(false);
   const [cachedSlides, setCachedSlides] = useState<CachedSlide[]>([]);
 
   // Update remaining requests on component mount and after translations
@@ -79,6 +77,27 @@ export function SlideInput() {
       setCachedSlides([]);
     } catch (error) {
       console.error('Failed to clear cache:', error);
+    }
+  };
+
+  const deletePresentation = (input: string) => {
+    try {
+      setCachedSlides(prev => {
+        // Filter out the presentation with the matching input
+        const updated = prev.filter(item => item.input !== input);
+        
+        // Save updated list to localStorage
+        if (updated.length > 0) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } else {
+          // If no presentations left, remove the key entirely
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        
+        return updated;
+      });
+    } catch (error) {
+      console.error('Failed to delete presentation:', error);
     }
   };
 
@@ -170,10 +189,11 @@ export function SlideInput() {
       console.log('Input text:', input);
       console.log('Response deck:', result.response);
       
-      setResponse(result.response);
-
       // Cache the newly generated slides
       addToCache(input, result.response);
+
+      // Clear the input after successful generation
+      setInput('');
 
       // Update remaining requests after successful translation
       setRemainingRequests(ClientRateLimiter.getRemainingRequests());
@@ -187,24 +207,17 @@ export function SlideInput() {
 
   const handleReset = () => {
     setInput('');
-    setResponse(null);
     setError('');
-  };
-
-  const copyToClipboard = async () => {
-    if (response) {
-      try {
-        await navigator.clipboard.writeText(JSON.stringify(response, null, 2));
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
-    }
   };
 
   const formatTimestamp = (timestamp: number): string => {
     return new Date(timestamp).toLocaleString();
+  };
+
+  const isNewPresentation = (timestamp: number): boolean => {
+    // Consider presentations generated in the last 5 minutes as "new"
+    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+    return timestamp > fiveMinutesAgo;
   };
 
   return (
@@ -213,16 +226,43 @@ export function SlideInput() {
         {/* Header */}
         <Group justify="space-between" align="center">
           <Title order={1} size="h2">AI Slide Generator</Title>
-          <Link href="/slides" passHref>
+          <Link href="/slides/demo" passHref>
             <Button 
-              variant="outline" 
+              variant="filled" 
+              color="grape"
               leftSection={<IconPresentation size={16} />}
-              rightSection={<IconExternalLink size={16} />}
             >
-              View Slides
+              View Demo
             </Button>
           </Link>
         </Group>
+
+        {/* Explainer Section */}
+        <Paper p="md" withBorder>
+          <Stack gap="md">
+            <Group>
+              <IconInfoCircle size={20} color="#228be6" />
+              <Title order={4} size="h5">How to Use</Title>
+            </Group>
+            <Text size="sm">
+              Generate AI-powered slide presentations by describing your topic below. Once generated, 
+              presentations are automatically saved and can be viewed anytime.
+            </Text>
+            
+            <Paper p="sm" withBorder bg="#f8f9fa">
+              <Stack gap="xs">
+                <Text size="sm" fw={500}>Presentation Controls:</Text>
+                <Text size="xs" c="dimmed">
+                  • <strong>Arrow keys</strong> or <strong>Space</strong> - Navigate between slides<br/>
+                  • <strong>F</strong> - Fullscreen mode<br/>
+                  • <strong>P</strong> - Presenter mode<br/>
+                  • <strong>C</strong> - Clone display<br/>
+                  • <strong>H</strong> - Return to home page
+                </Text>
+              </Stack>
+            </Paper>
+          </Stack>
+        </Paper>
 
         {/* Input Section */}
         <Paper p="md" withBorder>
@@ -261,16 +301,16 @@ export function SlideInput() {
           </Alert>
         )}
 
-        {/* Cached Presentations */}
+        {/* Generated Presentations */}
         {cachedSlides.length > 0 && (
           <Paper p="md" withBorder>
             <Stack gap="md">
               <Group justify="space-between" align="center">
                 <Group>
                   <IconHistory size={20} />
-                  <Title order={4} size="h5">Recently Generated Presentations</Title>
+                  <Title order={4} size="h5">Generated Presentations</Title>
                 </Group>
-                <Tooltip label="Clear all cached presentations">
+                <Tooltip label="Clear all presentations">
                   <ActionIcon 
                     variant="outline" 
                     color="red" 
@@ -283,107 +323,41 @@ export function SlideInput() {
               </Group>
               
               <Stack gap="xs">
-                {cachedSlides.slice(0, 3).map((item, index) => (
+                {cachedSlides.map((item, index) => (
                   <Paper key={index} p="sm" withBorder>
                     <Group justify="space-between" align="center">
                       <Stack gap="xs" style={{ flex: 1 }}>
-                        <Text size="sm" fw={500} lineClamp={1}>
-                          {item.input}
-                        </Text>
+                        <Group gap="xs" align="center">
+                          <Text size="sm" fw={500} lineClamp={1}>
+                            {item.input}
+                          </Text>
+                          {isNewPresentation(item.timestamp) && (
+                            <Badge color="green" size="xs">New</Badge>
+                          )}
+                        </Group>
                         <Text size="xs" c="dimmed">
                           Generated: {formatTimestamp(item.timestamp)} • {item.deck.slides.filter(s => !s.properties.exclude).length} slides
                         </Text>
                       </Stack>
-                      <Link href="/slides" passHref>
-                        <Button variant="outline" size="sm">
-                          View
-                        </Button>
-                      </Link>
+                                              <Group gap="xs">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            color='red'
+                            onClick={() => deletePresentation(item.input)}
+                          >
+                            Delete
+                          </Button>
+                          <Link href="/slides" passHref>
+                            <Button variant="light" size="sm">
+                              View
+                            </Button>
+                          </Link>
+                        </Group>
                     </Group>
                   </Paper>
                 ))}
               </Stack>
-              
-              {cachedSlides.length > 3 && (
-                <Text size="xs" c="dimmed" ta="center">
-                  And {cachedSlides.length - 3} more... Visit the slides page to see all cached presentations.
-                </Text>
-              )}
-            </Stack>
-          </Paper>
-        )}
-
-        {/* Response Display */}
-        {response && (
-          <Paper p="md" withBorder>
-            <Stack gap="md">
-              <Group justify="space-between" align="center">
-                <Title order={3} size="h4">Generated Slides</Title>
-                <Group gap="xs">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyToClipboard}
-                    leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                  >
-                    {copied ? 'Copied!' : 'Copy JSON'}
-                  </Button>
-                  <Link href="/slides" passHref>
-                    <Button
-                      variant="filled"
-                      size="sm"
-                      leftSection={<IconPresentation size={16} />}
-                    >
-                      View Presentation
-                    </Button>
-                  </Link>
-                </Group>
-              </Group>
-
-              {/* Slide Summary */}
-              <Paper p="sm" withBorder>
-                <Group gap="md">
-                  <Badge color="blue" variant="light">
-                    {response.slides.filter(s => !s.properties.exclude).length} slides
-                  </Badge>
-                  {response.slides.some(s => s.properties.classes.includes('center')) && (
-                    <Badge color="green" variant="light">Centered slides</Badge>
-                  )}
-                  {response.slides.some(s => s.notes) && (
-                    <Badge color="purple" variant="light">Speaker notes</Badge>
-                  )}
-                  {response.css && (
-                    <Badge color="orange" variant="light">Custom styling</Badge>
-                  )}
-                </Group>
-              </Paper>
-
-              {/* First Slide Preview */}
-              {response.slides.length > 0 && (
-                <Paper p="sm" withBorder>
-                  <Text size="sm" fw={500} mb="xs">First Slide Preview:</Text>
-                  <Code block>
-                    {response.slides[0].content.substring(0, 200)}
-                    {response.slides[0].content.length > 200 ? '...' : ''}
-                  </Code>
-                </Paper>
-              )}
-
-              {/* CSS Preview */}
-              {response.css && (
-                <Paper p="sm" withBorder>
-                  <Text size="sm" fw={500} mb="xs">Custom CSS:</Text>
-                  <Code block>
-                    {response.css.substring(0, 300)}
-                    {response.css.length > 300 ? '...' : ''}
-                  </Code>
-                </Paper>
-              )}
-
-              {/* Cache Info */}
-              <Alert color="green" title="Cached Successfully">
-                These slides have been automatically cached and can be viewed later without regenerating them from the AI.
-              </Alert>
             </Stack>
           </Paper>
         )}
