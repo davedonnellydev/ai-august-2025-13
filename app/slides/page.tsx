@@ -14,7 +14,7 @@ export default function SlidesPage() {
       // Create markdown content from the deck
       const markdownContent = createMarkdownContent(deck);
       textareaRef.current.value = markdownContent;
-      
+
       // Initialize remark.js
       initializeRemark();
     }
@@ -40,47 +40,49 @@ export default function SlidesPage() {
 
   const createMarkdownContent = (deck: any): string => {
     let markdown = '';
-    
+
     deck.slides.forEach((slide: any, index: number) => {
-      if (slide.properties.exclude) return;
-      
+      if (slide.properties.exclude) {
+        return;
+      }
+
       // Add slide properties
       if (slide.properties.name) {
         markdown += `name: ${slide.properties.name}\n`;
       }
-      
+
       if (slide.properties.classes.length > 0) {
         markdown += `class: ${slide.properties.classes.join(', ')}\n`;
       }
-      
+
       if (slide.properties.backgroundImageUrl) {
         markdown += `background-image: url(${slide.properties.backgroundImageUrl})\n`;
       }
-      
+
       if (!slide.properties.count) {
         markdown += `count: false\n`;
       }
-      
+
       if (slide.properties.layout) {
         markdown += `layout: true\n`;
       }
-      
+
       if (slide.properties.template) {
         markdown += `template: ${slide.properties.template}\n`;
       }
-      
+
       // Add slide content
       let cleanContent = slide.content;
       cleanContent = cleanContent.replace(/^class:\s*[^\n]+\n?/gm, '');
       cleanContent = cleanContent.replace(/^\n+/, '');
-      
+
       markdown += `\n${cleanContent}\n`;
-      
+
       // Add slide notes if they exist
       if (slide.notes) {
         markdown += `\n???\n${slide.notes}\n`;
       }
-      
+
       // Add slide separator
       if (index < deck.slides.length - 1) {
         const nextSlide = deck.slides[index + 1];
@@ -91,7 +93,7 @@ export default function SlidesPage() {
         }
       }
     });
-    
+
     return markdown;
   };
 
@@ -127,7 +129,7 @@ export default function SlidesPage() {
     <>
       {/* Custom CSS Injection */}
       <style dangerouslySetInnerHTML={{ __html: deck.css }} />
-      
+
       {/* Simple textarea for remark.js */}
       <textarea id="source" ref={textareaRef} style={{ display: 'none' }}>
         {createMarkdownContent(deck)}

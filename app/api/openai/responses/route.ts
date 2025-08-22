@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { zodTextFormat } from "openai/helpers/zod";
-import { z } from "zod";
+import { zodTextFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 import { MODEL } from '@/app/config/constants';
 import { InputValidator, ServerRateLimiter } from '@/app/lib/utils/api-helpers';
 
@@ -66,68 +66,72 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const SlidePropertiesSchema = z.object({
+    const SlidePropertiesSchema = z
+      .object({
         /** `name:` — identifier for linking/templates */
         name: z.string().min(1).optional().nullable(),
-      
+
         /** `class:` — will be joined as comma-separated list */
         classes: z.array(z.string().min(1)).default([]),
-      
+
         /** `layout:` — when true, slide becomes a layout slide (template for following) */
         layout: z.boolean(),
-      
+
         /** `template:` — name of another slide to prepend/merge from */
         template: z.string().min(1).optional().nullable(),
-      
+
         /** `count:` — exclude this slide from the slide counter when false */
         count: z.boolean(),
-      
+
         /** `exclude:` — hide this slide entirely when true */
         exclude: z.boolean(),
-      
+
         /** `background-image:` — URL for slide background (render as `background-image: url(...)`) */
         backgroundImageUrl: z.string().optional().nullable(),
-      }).strict();
-      
-      /** A single slide */
-      const SlideSchema = z.object({
+      })
+      .strict();
+
+    /** A single slide */
+    const SlideSchema = z
+      .object({
         /** Freeform Markdown content for the slide body (what’s shown on the slide) */
-        content: z.string().default(""),
-      
+        content: z.string().default(''),
+
         /** Speaker notes, rendered after a `???` separator in Markdown */
         notes: z.string().optional().nullable(),
-      
+
         /** Slide properties that become the initial key: value lines */
         properties: SlidePropertiesSchema.default({
-            name: null,
-            classes: [],
-            layout: false,
-            template: null,
-            count: true,
-            exclude: false,
-            backgroundImageUrl: null
+          name: null,
+          classes: [],
+          layout: false,
+          template: null,
+          count: true,
+          exclude: false,
+          backgroundImageUrl: null,
         }),
-      
+
         /**
          * When true, render this slide after the previous one using the `--` separator
          * so it inherits previous content (Remark “incremental slide”).
          * If false or omitted, use the standard `---` separator.
          */
         incrementalFromPrevious: z.boolean(),
-      }).strict();
-           
-      /** The whole deck */
-      const RemarkDeckSchema = z.object({
-     
+      })
+      .strict();
+
+    /** The whole deck */
+    const RemarkDeckSchema = z
+      .object({
         /** Global CSS to inject (e.g., inside a <style> tag) */
-        css: z.string().default(""),
-      
+        css: z.string().default(''),
+
         /** Ordered slides */
         slides: z.array(SlideSchema).min(1),
-      }).strict();
+      })
+      .strict();
 
-    const instructions: string =
-    `You are an expert in content creation and delivery. You will be given an idea or set of ideas and your job is to come up with the content for a set of slides based on those ideas. The slides will then be displayed online using remarkjs, so they will need to be delivered in markdown format. Provide all the data to assemble these slides using the provided JSON schema. Ensure you include css for the pack to style the content creatively. 
+    const instructions: string = `You are an expert in content creation and delivery. You will be given an idea or set of ideas and your job is to come up with the content for a set of slides based on those ideas. The slides will then be displayed online using remarkjs, so they will need to be delivered in markdown format. Provide all the data to assemble these slides using the provided JSON schema. Ensure you include css for the pack to style the content creatively. 
       
     # Formatting rules
     ## Slide Separators
@@ -386,8 +390,8 @@ export async function POST(request: NextRequest) {
       instructions,
       input,
       text: {
-        format: zodTextFormat(RemarkDeckSchema, "remark_js_deck")
-      }
+        format: zodTextFormat(RemarkDeckSchema, 'remark_js_deck'),
+      },
     });
 
     if (response.status !== 'completed') {

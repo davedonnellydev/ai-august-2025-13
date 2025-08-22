@@ -225,6 +225,16 @@ export class ServerRateLimiter {
       }
     }
   }
+
+  // Clear store
+  static clearStore() {
+    this.store.clear();
+  }
+
+  // Get store entry (for testing)
+  static getStoreEntry(ip: string) {
+    return this.store.get(ip);
+  }
 }
 
 // Clean up every 5 minutes
@@ -256,9 +266,19 @@ export class ClientRateLimiter {
 
   static getRemainingRequests(): number {
     const now = Date.now();
-    const requests = JSON.parse(
-      localStorage.getItem('translation_requests') || '[]'
-    );
+    let requests: number[] = [];
+
+    try {
+      const stored = localStorage.getItem('translation_requests');
+      if (stored) {
+        requests = JSON.parse(stored);
+      }
+    } catch (error) {
+      // If JSON is invalid, reset to empty array
+      localStorage.removeItem('translation_requests');
+      requests = [];
+    }
+
     const validRequests = requests.filter(
       (timestamp: number) => now - timestamp < STORAGE_WINDOW_MS
     );

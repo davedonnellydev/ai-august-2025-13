@@ -1,8 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, Text, TextInput, Title, Paper, Group, Stack, Badge, Code, Alert, Select, ActionIcon, Tooltip } from '@mantine/core';
-import { IconPresentation, IconExternalLink, IconCopy, IconCheck, IconHistory, IconTrash, IconInfoCircle } from '@tabler/icons-react';
+import {
+  Button,
+  Text,
+  TextInput,
+  Title,
+  Paper,
+  Group,
+  Stack,
+  Badge,
+  Alert,
+  ActionIcon,
+  Tooltip,
+} from '@mantine/core';
+import {
+  IconPresentation,
+  IconHistory,
+  IconTrash,
+  IconInfoCircle,
+} from '@tabler/icons-react';
 import { ClientRateLimiter } from '@/app/lib/utils/api-helpers';
 import Link from 'next/link';
 
@@ -82,10 +99,10 @@ export function SlideInput() {
 
   const deletePresentation = (input: string) => {
     try {
-      setCachedSlides(prev => {
+      setCachedSlides((prev) => {
         // Filter out the presentation with the matching input
-        const updated = prev.filter(item => item.input !== input);
-        
+        const updated = prev.filter((item) => item.input !== input);
+
         // Save updated list to localStorage
         if (updated.length > 0) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -93,7 +110,7 @@ export function SlideInput() {
           // If no presentations left, remove the key entirely
           localStorage.removeItem(STORAGE_KEY);
         }
-        
+
         return updated;
       });
     } catch (error) {
@@ -104,12 +121,12 @@ export function SlideInput() {
   const addToCache = (input: string, deck: RemarkDeck) => {
     console.log('Adding to cache - input:', input);
     console.log('Adding to cache - deck slides count:', deck.slides?.length);
-    
+
     if (!input || !deck) {
       console.error('Invalid input or deck for caching:', { input, deck });
       return;
     }
-    
+
     const newCachedSlide: CachedSlide = {
       input,
       deck,
@@ -118,36 +135,42 @@ export function SlideInput() {
 
     console.log('Creating cached slide object:', newCachedSlide);
 
-    setCachedSlides(prev => {
+    setCachedSlides((prev) => {
       console.log('Previous cached slides:', prev);
-      
+
       // Remove existing entry with same input if it exists
-      const filtered = prev.filter(item => item.input !== input);
+      const filtered = prev.filter((item) => item.input !== input);
       console.log('Filtered slides (removed duplicates):', filtered);
-      
+
       // Add new entry at the beginning
       const updated = [newCachedSlide, ...filtered];
       console.log('Updated slides list:', updated);
-      
+
       // Keep only the most recent 10 entries
       const maxCacheSize = 10;
       const final = updated.slice(0, maxCacheSize);
       console.log('Final slides list (after size limit):', final);
-      
+
       // Save to localStorage
       try {
         const serialized = JSON.stringify(final);
         console.log('Serialized data length:', serialized.length);
         localStorage.setItem(STORAGE_KEY, serialized);
-        console.log('Successfully saved to localStorage with key:', STORAGE_KEY);
-        
+        console.log(
+          'Successfully saved to localStorage with key:',
+          STORAGE_KEY
+        );
+
         // Verify it was saved
         const verification = localStorage.getItem(STORAGE_KEY);
-        console.log('Verification - data retrieved from localStorage:', verification ? 'Data found' : 'No data found');
+        console.log(
+          'Verification - data retrieved from localStorage:',
+          verification ? 'Data found' : 'No data found'
+        );
       } catch (error) {
         console.error('Failed to save to localStorage:', error);
       }
-      
+
       return final;
     });
   };
@@ -188,7 +211,7 @@ export function SlideInput() {
       console.log('API response result:', result);
       console.log('Input text:', input);
       console.log('Response deck:', result.response);
-      
+
       // Cache the newly generated slides
       addToCache(input, result.response);
 
@@ -216,7 +239,7 @@ export function SlideInput() {
 
   const isNewPresentation = (timestamp: number): boolean => {
     // Consider presentations generated in the last 5 minutes as "new"
-    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
     return timestamp > fiveMinutesAgo;
   };
 
@@ -225,10 +248,12 @@ export function SlideInput() {
       <Stack gap="lg">
         {/* Header */}
         <Group justify="space-between" align="center">
-          <Title order={1} size="h2">AI Slide Generator</Title>
+          <Title order={1} size="h2">
+            AI Slide Generator
+          </Title>
           <Link href="/slides/demo" passHref>
-            <Button 
-              variant="filled" 
+            <Button
+              variant="filled"
               color="grape"
               leftSection={<IconPresentation size={16} />}
             >
@@ -242,22 +267,28 @@ export function SlideInput() {
           <Stack gap="md">
             <Group>
               <IconInfoCircle size={20} color="#228be6" />
-              <Title order={4} size="h5">How to Use</Title>
+              <Title order={4} size="h5">
+                How to Use
+              </Title>
             </Group>
             <Text size="sm">
-              Generate AI-powered slide presentations by describing your topic below. Once generated, 
-              presentations are automatically saved and can be viewed anytime.
+              Generate AI-powered slide presentations by describing your topic
+              below. Once generated, presentations are automatically saved and
+              can be viewed anytime.
             </Text>
-            
+
             <Paper p="sm" withBorder bg="#f8f9fa">
               <Stack gap="xs">
-                <Text size="sm" fw={500}>Presentation Controls:</Text>
+                <Text size="sm" fw={500}>
+                  Presentation Controls:
+                </Text>
                 <Text size="xs" c="dimmed">
-                  • <strong>Arrow keys</strong> or <strong>Space</strong> - Navigate between slides<br/>
-                  • <strong>F</strong> - Fullscreen mode<br/>
-                  • <strong>P</strong> - Presenter mode<br/>
-                  • <strong>C</strong> - Clone display<br/>
-                  • <strong>H</strong> - Return to home page
+                  • <strong>Arrow keys</strong> or <strong>Space</strong> -
+                  Navigate between slides
+                  <br />• <strong>F</strong> - Fullscreen mode
+                  <br />• <strong>P</strong> - Presenter mode
+                  <br />• <strong>C</strong> - Clone display
+                  <br />• <strong>H</strong> - Return to home page
                 </Text>
               </Stack>
             </Paper>
@@ -287,7 +318,11 @@ export function SlideInput() {
               >
                 Generate Slides
               </Button>
-              <Button variant="light" color="cyan" onClick={() => handleReset()}>
+              <Button
+                variant="light"
+                color="cyan"
+                onClick={() => handleReset()}
+              >
                 Reset
               </Button>
             </Group>
@@ -308,20 +343,23 @@ export function SlideInput() {
               <Group justify="space-between" align="center">
                 <Group>
                   <IconHistory size={20} />
-                  <Title order={4} size="h5">Generated Presentations</Title>
+                  <Title order={4} size="h5">
+                    Generated Presentations
+                  </Title>
                 </Group>
                 <Tooltip label="Clear all presentations">
-                  <ActionIcon 
-                    variant="outline" 
-                    color="red" 
+                  <ActionIcon
+                    variant="outline"
+                    color="red"
                     onClick={clearCache}
                     size="sm"
+                    data-testid="clear-cache-button"
                   >
                     <IconTrash size={16} />
                   </ActionIcon>
                 </Tooltip>
               </Group>
-              
+
               <Stack gap="xs">
                 {cachedSlides.map((item, index) => (
                   <Paper key={index} p="sm" withBorder>
@@ -332,28 +370,36 @@ export function SlideInput() {
                             {item.input}
                           </Text>
                           {isNewPresentation(item.timestamp) && (
-                            <Badge color="green" size="xs">New</Badge>
+                            <Badge color="green" size="xs">
+                              New
+                            </Badge>
                           )}
                         </Group>
                         <Text size="xs" c="dimmed">
-                          Generated: {formatTimestamp(item.timestamp)} • {item.deck.slides.filter(s => !s.properties.exclude).length} slides
+                          Generated: {formatTimestamp(item.timestamp)} •{' '}
+                          {
+                            item.deck.slides.filter(
+                              (s) => !s.properties.exclude
+                            ).length
+                          }{' '}
+                          slides
                         </Text>
                       </Stack>
-                                              <Group gap="xs">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            color='red'
-                            onClick={() => deletePresentation(item.input)}
-                          >
-                            Delete
+                      <Group gap="xs">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          color="red"
+                          onClick={() => deletePresentation(item.input)}
+                        >
+                          Delete
+                        </Button>
+                        <Link href="/slides" passHref>
+                          <Button variant="light" size="sm">
+                            View
                           </Button>
-                          <Link href="/slides" passHref>
-                            <Button variant="light" size="sm">
-                              View
-                            </Button>
-                          </Link>
-                        </Group>
+                        </Link>
+                      </Group>
                     </Group>
                   </Paper>
                 ))}

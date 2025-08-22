@@ -5,20 +5,25 @@
 **📆 Date**: 21/Aug/2025  
 **🎯 Project Objective**: Upload/paste markdown, convert it to simple web slides.  
 **🚀 Features**: Markdown input; Parse to slides (sections as slides); Keyboard navigation; Stretch goals: Download as PDF  
-**🛠️ Tech used**: Next.js, TypeScript, OpenAI API, remarkjs, showdown.js  
-**▶️ Live Demo**: _[https://your-demo-url.com](https://your-demo-url.com)_  
-_(Link will be added after deployment)_
+**🛠️ Tech used**: Next.js, TypeScript, OpenAI API, [remarkjs](https://github.com/gnab/remark)  
+**▶️ Live Demo**: [https://ai-august-2025-13.netlify.app](https://ai-august-2025-13.netlify.app)
 
 ## 🗒️ Summary
 
-**Lessons learned**  
-_A little summary of learnings_
+This project started as a simple **Markdown-to-HTML slide converter**, but it evolved into something more fun: an **AI-powered slide pack generator**.
 
-**Blockers**  
-_Note any blockers here_
+Using `remark.js` to power the slide conversion, I built an app that lets the user input a description of a slide pack and have AI generate the HTML markup and styling for a presentation. The app also stores the generated packs in `localStorage`, so users can revisit them later, create new ones, or delete ones they no longer need.
+
+The day was a little interrupted by real life (our washing machine broke down 🚰😅), so I didn’t get to implement editing functionality for the slide packs — a feature I would have loved to include. Still, I think the end result is a fun twist on remark.js and shows how AI can be used not just for analysis, but also for **generating structured, creative content**.
+
+**Lessons learned**
+
+- As possibilities reveal themselves, projects can shift from their original concept into something more interesting — let them evolve.
+- Even simple frameworks like `remark.js` become powerful when paired with AI generation.
+- Local storage is a great lightweight way to persist user data without overcomplicating with a backend.
 
 **Final thoughts**  
-_Any final thoughts here_
+While it’s not feature-complete, this was a fun project to work on, and I’d love to expand it in the future with editing capabilities. For now, it’s a neat little experiment in turning descriptions into full AI-powered slide decks.
 
 This project has been built as part of my AI August App-A-Day Challenge. You can read more information on the full project here: [https://github.com/davedonnellydev/ai-august-2025-challenge](https://github.com/davedonnellydev/ai-august-2025-challenge).
 

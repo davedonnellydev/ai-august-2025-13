@@ -10,7 +10,8 @@ import { theme } from '../theme';
 
 export const metadata = {
   title: 'Markdown to Slides',
-  description: 'A Markdown to Slides converter app, powered by AI and built for AIAugust App a Day Challenge',
+  description:
+    'A Markdown to Slides converter app, powered by AI and built for AIAugust App a Day Challenge',
 };
 
 export default function RootLayout({ children }: { children: any }) {

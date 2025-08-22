@@ -50,7 +50,10 @@ export function useSlides(input?: string) {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        console.log('useSlides: Loaded cached slides from localStorage:', parsed);
+        console.log(
+          'useSlides: Loaded cached slides from localStorage:',
+          parsed
+        );
         setCachedSlides(parsed);
       } else {
         console.log('useSlides: No cached slides found in localStorage');
@@ -64,7 +67,10 @@ export function useSlides(input?: string) {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedSlides));
-      console.log('useSlides: Saved cached slides to localStorage:', cachedSlides);
+      console.log(
+        'useSlides: Saved cached slides to localStorage:',
+        cachedSlides
+      );
     } catch (error) {
       console.error('Failed to save cached slides:', error);
     }
@@ -82,20 +88,20 @@ export function useSlides(input?: string) {
       timestamp: Date.now(),
     };
 
-    setCachedSlides(prev => {
+    setCachedSlides((prev) => {
       // Remove existing entry with same input if it exists
-      const filtered = prev.filter(item => item.input !== input);
-      
+      const filtered = prev.filter((item) => item.input !== input);
+
       // Add new entry at the beginning
       const updated = [newCachedSlide, ...filtered];
-      
+
       // Keep only the most recent MAX_CACHE_SIZE entries
       return updated.slice(0, MAX_CACHE_SIZE);
     });
   };
 
   const getFromCache = (input: string): RemarkDeck | null => {
-    const cached = cachedSlides.find(item => item.input === input);
+    const cached = cachedSlides.find((item) => item.input === input);
     return cached ? cached.deck : null;
   };
 
@@ -107,7 +113,7 @@ export function useSlides(input?: string) {
   const fetchSlides = async (slideInput: string) => {
     setLoading(true);
     setError(null);
-    
+
     // Check cache first
     const cached = getFromCache(slideInput);
     if (cached) {
@@ -115,7 +121,7 @@ export function useSlides(input?: string) {
       setLoading(false);
       return;
     }
-    
+
     try {
       const response = await fetch('/api/openai/responses', {
         method: 'POST',
@@ -132,10 +138,10 @@ export function useSlides(input?: string) {
 
       const data: SlidesResponse = await response.json();
       const newDeck = data.response;
-      
+
       // Add to cache
       addToCache(slideInput, newDeck);
-      
+
       setDeck(newDeck);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -147,15 +153,18 @@ export function useSlides(input?: string) {
   useEffect(() => {
     if (input) {
       fetchSlides(input);
-    } else {
+    } else if (cachedSlides.length > 0) {
       // If no input provided, try to load the most recent cached slides
-      if (cachedSlides.length > 0) {
-        const mostRecent = cachedSlides[0]; // Most recent is first in the array
-        console.log('useSlides: No input provided, loading most recent cached slides:', mostRecent);
-        setDeck(mostRecent.deck);
-      } else {
-        console.log('useSlides: No input provided and no cached slides available');
-      }
+      const mostRecent = cachedSlides[0]; // Most recent is first in the array
+      console.log(
+        'useSlides: No input provided, loading most recent cached slides:',
+        mostRecent
+      );
+      setDeck(mostRecent.deck);
+    } else {
+      console.log(
+        'useSlides: No input provided and no cached slides available'
+      );
     }
   }, [input, cachedSlides]);
 
@@ -167,5 +176,6 @@ export function useSlides(input?: string) {
     cachedSlides,
     getFromCache,
     clearCache,
+    addToCache,
   };
 }
